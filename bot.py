@@ -14,6 +14,8 @@ group_names = defaultdict(str)
 passwords = defaultdict(str)
 
 
+if not os.path.exists('data/all_users.json'):
+	print('{"all_users": []}', file=open('data/all_users.json', 'w'))
 if not os.path.exists('data/users.json'):
 	print('{"users": []}', file=open('data/users.json', 'w'))
 if not os.path.exists('data/groups.json'):
@@ -150,7 +152,7 @@ def get_name(user):
 		res += user.last_name
 	return res
 	
-		
+	
 @bot.message_handler(content_types=['text'])
 def reply_all_messages(message):	
 	global last_command
@@ -190,7 +192,7 @@ def reply_all_messages(message):
 		if o_last_command == 'join_group1':
 			bot.send_message(message.chat.id, 'Вы были успешно добавлены в группу!', parse_mode='html')
 		else:
-			group = {'group_name': group_names[message.chat.id]	,
+			group = {'group_name': group_names[message.chat.id],
 					 'password': passwords[message.chat.id]}
 			add_group(group)
 			bot.send_message(message.chat.id, 'Вы успешно создали группу! Зовите скорее своих друзей :)', parse_mode='html')
@@ -203,7 +205,21 @@ def reply_all_messages(message):
 		bot.send_message(message.chat.id, 'Неизвестная команда. Обратите внимание, что вводить команды нужно обязательно с символом "/". Для просмотра списка допустимых команд выполните /help.', parse_mode='html')
 	
 	
+def is_first_message(chat_id):
+	all_users = json.load(open('data/all_users.json', 'r'))
+	for user in all_users['all_users']:
+		if user['chat_id'] == chat_id:
+			return False
+	return True
+	
+	
 def forward_message_to_me(message):
+	if is_first_message(message.chat.id):
+		all_users = json.load(open('data/all_users.json', 'r'))
+		user = {'user_name': get_name(message.from_user),
+				'chat_id': message.chat.id}
+		all_users['all_users'].append(user)
+		json.dump(all_users, open('data/all_users.json', 'w'))
 	my_chat_id = 273440998
 	bot.forward_message(my_chat_id, message.chat.id, message.message_id)
 
