@@ -26,6 +26,20 @@ token = '787172870:AAGjJ-8U7avv2JaJS9xE8Hg-HN7msjbZBP4'
 bot = telebot.TeleBot(token)
 
 
+@bot.message_handler(commands=['notify_user'])
+def notify_user(message):
+	try:
+		command, chat_id, *texts = message.text.split()
+		text = ' '.join(texts)
+		try:
+			bot.send_message(chat_id, text, parse_mode='html')
+			bot.send_message(message.chat.id, 'User was notified', parse_mode='html')
+		except Exception as E:
+			bot.send_message(message.chat.id, str(E), parse_mode='html')
+	except Exception as E:
+		bot.send_message(message.chat.id, 'Incorrect arguments', parse_mode='html')
+	
+	
 def has_user(chat_id):
 	users = json.load(open('data/users.json', 'r'))
 	for u in users['users']:
@@ -53,18 +67,25 @@ def log_message(message):
 	forward_message_to_me(message)
 	
 	
+def ignore_message_from_group(message):
+	if message.chat.id < 0:
+		bot.send_message(message.chat.id, 'Я отвечаю только на личные сообщения. Жду каждого из участников группы :)', parse_mode='html')
+		return True
+	return False
+	
 @bot.message_handler(commands=['start', 'help'])
 def start(message):
 	log_message(message)
 	global last_command
 	last_command[message.chat.id] = 'help'
-	print(help_text)
 	bot.send_message(message.chat.id, help_text, parse_mode='html')
 
 
 @bot.message_handler(commands=['create_group'])
 def create_group(message):
 	log_message(message)
+	if ignore_message_from_group(message):
+		return
 	global last_command
 	last_command[message.chat.id] = 'create_group'
 	if has_user(message.chat.id):
@@ -76,6 +97,8 @@ def create_group(message):
 @bot.message_handler(commands=['join_group'])
 def join_group(message):
 	log_message(message)
+	if ignore_message_from_group(message):
+		return
 	global last_command
 	last_command[message.chat.id] = 'join_group'
 	if has_user(message.chat.id):
@@ -88,6 +111,8 @@ def join_group(message):
 @bot.message_handler(commands=['leave_group'])
 def leave_group(message):
 	log_message(message)
+	if ignore_message_from_group(message):
+		return
 	global last_command
 	last_command[message.chat.id] = 'leave_group'
 	if has_user(message.chat.id):
@@ -100,6 +125,8 @@ def leave_group(message):
 @bot.message_handler(commands=['list_users'])
 def list_users(message):
 	log_message(message)
+	if ignore_message_from_group(message):
+		return
 	global last_command
 	last_command[message.chat.id] = 'list_users'
 	if not has_user(message.chat.id):
@@ -118,6 +145,8 @@ def list_users(message):
 @bot.message_handler(commands=['generate'])
 def generate(message):
 	log_message(message)
+	if ignore_message_from_group(message):
+		return
 	global last_command
 	last_command[message.chat.id] = 'generate'
 	if not has_user(message.chat.id):
@@ -126,6 +155,16 @@ def generate(message):
 	else:
 		bot.send_message(message.chat.id, 'Введите пароль:', parse_mode='html')
 	
+	
+@bot.message_handler(commands=['leave_feedback'])
+def leave_feedback(message):
+	log_message(message)
+	if ignore_message_from_group(message):
+		return
+	global last_command
+	last_command[message.chat.id] = 'leave_feedback'
+	bot.send_message(message.chat.id, 'Введите ваш вопрос/отзыв:', parse_mode='html')		
+
 	
 def bad_permutation(p):
 	return len(p) > 1 and np.any(p == np.arange(len(p)))
@@ -156,6 +195,8 @@ def get_name(user):
 @bot.message_handler(content_types=['text'])
 def reply_all_messages(message):	
 	global last_command
+	if ignore_message_from_group(message):
+		return
 	o_last_command = last_command[message.chat.id]
 	last_command[message.chat.id] = 'text'
 	log_message(message)
@@ -165,7 +206,7 @@ def reply_all_messages(message):
 		elif not correct_name(message.text):
 			bot.send_message(message.chat.id, 'Введете корректное название группы. Название может состоять только из англиских букв и цифр.', parse_mode='html')
 		else:
-			bot.send_message(message.chat.id, 'Введите секретный пароль, с помощью которого вы сможете сгенерировать распределение участников:', parse_mode='html')
+			bot.send_message(message.chat.id, 'Придумайте секретный пароль, с помощью которого вы сможете сгенерировать распределение участников:', parse_mode='html')
 			last_command[message.chat.id] = 'create_group1'
 			group_names[message.chat.id] = message.text
 	elif o_last_command == 'create_group1':
@@ -201,11 +242,15 @@ def reply_all_messages(message):
 			generate_pairs(get_group_name(message.chat.id))
 		else:
 			bot.send_message(message.chat.id, 'Неверный пароль. Если вы не знаете пароль, свяжитесь с создателем группы.', parse_mode='html')
+	elif o_last_command == 'leave_feedback':
+		pass
 	else:
 		bot.send_message(message.chat.id, 'Неизвестная команда. Обратите внимание, что вводить команды нужно обязательно с символом "/". Для просмотра списка допустимых команд выполните /help.', parse_mode='html')
 	
 	
 def is_first_message(chat_id):
+	if chat_id < 0:
+		return False
 	all_users = json.load(open('data/all_users.json', 'r'))
 	for user in all_users['all_users']:
 		if user['chat_id'] == chat_id:
