@@ -26,7 +26,7 @@ def has_group(group_name):
 	
 	
 def ok_character(c):
-	return ('a' <= c <= 'z') or ('A' <= c <= 'Z') or ('0' <= c <= '9')
+	return ('a' <= c <= 'z') or ('A' <= c <= 'Z') or ('0' <= c <= '9') or c == ' '
 	
 	
 def correct_name(name):

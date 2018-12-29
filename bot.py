@@ -140,6 +140,25 @@ def list_users(message):
 		for num, user in enumerate(users):
 			reply += str(1 + num) + ') ' + user['name'] + '\n'
 		bot.send_message(message.chat.id, reply, parse_mode='html')
+		
+		
+@bot.message_handler(commands=['secret_list_all_users'])
+def list_users(message):
+	log_message(message)
+	if ignore_message_from_group(message):
+		return
+	global last_command
+	last_command[message.chat.id] = 'secret_list_all_users'
+	groups = json.load(open('data/groups.json', 'r'))['groups']
+	reply = ''
+	for group in groups:
+		group_name = group['group_name']
+		num = 0
+		reply += 'Список участников группы {}:\n'.format(group_name)
+		users = load_group(group_name)
+		for num, user in enumerate(users):
+			reply += str(1 + num) + ') ' + user['name'] + '\n'
+	bot.send_message(message.chat.id, reply, parse_mode='html')
 	
 	
 @bot.message_handler(commands=['generate'])
