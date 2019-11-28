@@ -6,6 +6,7 @@ import numpy as np
 from collections import defaultdict
 from groups import *
 import os
+import random
 
 
 global last_command, group_names
@@ -38,6 +39,34 @@ def notify_user(message):
 			bot.send_message(message.chat.id, str(E), parse_mode='html')
 	except Exception as E:
 		bot.send_message(message.chat.id, 'Incorrect arguments', parse_mode='html')
+	
+
+def happy_new_year():
+	def generate_wish():
+		all_wishes = ['счастья', 
+					  'здоровья', 
+					  'творческого вдохновления', 
+					  'ярких впечатлений', 
+					  'радостных эмоций', 
+					  'удачи', 
+					  'исполнения заветных желаний']
+		wishes = random.sample(all_wishes, 3)
+		s = 'Команда тайного Санты поздравляет вас с Новым годом и желает вам '
+		s += wishes[0] + ', ' + wishes[1] + ' и ' + wishes[2] + '! 🎄🎁'
+		return s
+		
+	my_chat_id = 273440998
+	users = json.load(open('data/all_users.json', 'r'))['all_users']
+	total = 0
+	for user in users:
+		wish = generate_wish()
+		try:
+			bot.send_message(user['chat_id'], wish, parse_mode='html')
+			bot.send_message(my_chat_id, str(user['chat_id']) + ') ' + user['user_name'] + ' ' + wish, parse_mode='html')
+			total += 1
+		except Exception as e:
+			bot.send_message(my_chat_id, 'Can not notify ' + str(user['chat_id']) + ') ' + user['user_name'] + ' ' + str(e), parse_mode='html')
+	bot.send_message(my_chat_id, str(total), parse_mode='html')
 	
 	
 def has_user(chat_id):
