@@ -23,7 +23,7 @@ if not os.path.exists('data/groups.json'):
 	print('{"groups": []}', file=open('data/groups.json', 'w'))
 		
 help_text = open('data/help.txt', 'r').read()
-token = '787172870:AAGjJ-8U7avv2JaJS9xE8Hg-HN7msjbZBP4'
+token = open('data/token.txt', 'r').read()
 bot = telebot.TeleBot(token)
 
 
