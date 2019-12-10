@@ -1,11 +1,9 @@
-﻿import telebot
-import datetime
-from telebot import types
+﻿import random
+import telebot
 import numpy as np
-from collections import defaultdict
 from database import *
-import os
-import random
+from telebot import types
+from collections import defaultdict
 
 
 global last_command, group_names
@@ -227,6 +225,36 @@ def leave_feedback(message):
     bot.send_message(message.chat.id, 'Введите ваш вопрос/отзыв:', parse_mode='html')        
 
     
+@bot.message_handler(commands=['write_to_santa'])
+def write_to_santa(message):
+    log_message(message)
+    if ignore_message_from_group(message):
+        return
+    global last_command
+    last_command[message.chat.id] = 'write_to_santa'
+    user = User.get(User.chat_id == message.chat.id)
+    if user.santa is not None:
+        bot.send_message(message.chat.id, 'Напишите письмо своему тайному Санте:', parse_mode='html')
+    else:
+        bot.send_message(message.chat.id, 'Для начала необходимо выполнить команду /generate.', parse_mode='html')
+        last_command[message.chat.id] = 'text'
+        
+        
+@bot.message_handler(commands=['write_to_donee'])
+def write_to_donee(message):
+    log_message(message)
+    if ignore_message_from_group(message):
+        return
+    global last_command
+    last_command[message.chat.id] = 'write_to_donee'
+    targets = [target for target in User.get(User.chat_id == message.chat.id).targets]
+    if len(targets) > 0:
+        bot.send_message(message.chat.id, 'Напишите письмо своему дарополучателю:', parse_mode='html')
+    else:
+        bot.send_message(message.chat.id, 'Для начала необходимо выполнить команду /generate.', parse_mode='html')
+        last_command[message.chat.id] = 'text'
+        
+        
 def bad_permutation(p):
     return len(p) > 1 and np.any(p == np.arange(len(p)))
     
@@ -238,6 +266,8 @@ def generate_pairs(group_name):
         p = np.random.permutation(len(users))
     for i in range(len(users)):
         target = p[i]
+        users[target].santa = users[i]
+        users[target].save()
         bot.send_message(users[i].chat_id, 'От вас ждет подарка ' + users[target].name + ' :)', parse_mode='html')
         bot.forward_message(users[i].chat_id, users[target].chat_id, users[target].message_id)
         
@@ -254,13 +284,13 @@ def get_name(user):
     
     
 @bot.message_handler(content_types=['text'])
-def reply_all_messages(message):    
+def reply_all_messages(message):
+    log_message(message)
     global last_command
     if ignore_message_from_group(message):
         return
     o_last_command = last_command[message.chat.id]
     last_command[message.chat.id] = 'text'
-    log_message(message)
     if o_last_command == 'create_group':
         if has_group(message.text):
             bot.send_message(message.chat.id, 'Группа с таким названием уже существует.', parse_mode='html')
@@ -303,6 +333,14 @@ def reply_all_messages(message):
             bot.send_message(message.chat.id, 'Неверный пароль. Если вы не знаете пароль, свяжитесь с создателем группы.', parse_mode='html')
     elif o_last_command == 'leave_feedback':
         pass
+    elif o_last_command == 'write_to_santa':
+        user = User.get(User.chat_id == message.chat.id)
+        bot.forward_message(user.santa.chat_id, message.chat.id, message.message_id)
+        bot.send_message(message.chat.id, 'Письмо успешно отправлено!', parse_mode='html')
+    elif o_last_command == 'write_to_donee':
+        targets = [target for target in User.get(User.chat_id == message.chat.id).targets]
+        bot.send_message(targets[0].chat_id, 'Вам пришло письмо от персонального Тайного Санты, скорее читайте его!\n\n{}\n\nЕсли вы хотите ответить, используйте команду /write_to_santa.'.format(message.text), parse_mode='html')
+        bot.send_message(message.chat.id, 'Письмо успешно отправлено!', parse_mode='html')
     else:
         bot.send_message(message.chat.id, 'Неизвестная команда. Обратите внимание, что вводить команды нужно обязательно с символом "/". Для просмотра списка допустимых команд выполните /help.', parse_mode='html')
     
