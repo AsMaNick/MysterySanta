@@ -13,6 +13,7 @@ passwords = defaultdict(str)
         
 help_text = open('data/help.txt', 'r').read()
 token = open('data/token.txt', 'r').read()
+personal_chats = list(map(int, open('data/personal_chats.txt', 'r').read().split(' ')))
 bot = telebot.TeleBot(token)
 
 
@@ -285,8 +286,14 @@ def get_name(user):
     
 @bot.message_handler(content_types=['text'])
 def reply_all_messages(message):
-    log_message(message)
     global last_command
+    is_personal_message = (last_command[message.chat.id] in ['create_group2', 'join_group1', 'write_to_santa', 'write_to_donee'])
+    if is_personal_message and message.chat.id in personal_chats:
+        my_chat_id = 273440998
+        user = User.get(User.chat_id == message.chat.id)
+        bot.send_message(my_chat_id, '{} leave personal message {}'.format(user.name, last_command[message.chat.id]), parse_mode='html')
+    else:
+        log_message(message)
     if ignore_message_from_group(message):
         return
     o_last_command = last_command[message.chat.id]
@@ -335,7 +342,9 @@ def reply_all_messages(message):
         pass
     elif o_last_command == 'write_to_santa':
         user = User.get(User.chat_id == message.chat.id)
+        bot.send_message(user.santa.chat_id, 'Вам пришло письмо от вашего дарополучателя, скорее читайте его!'.format(message.text), parse_mode='html')
         bot.forward_message(user.santa.chat_id, message.chat.id, message.message_id)
+        bot.send_message(user.santa.chat_id, 'Если вы хотите ответить, используйте команду /write_to_donee.'.format(message.text), parse_mode='html')
         bot.send_message(message.chat.id, 'Письмо успешно отправлено!', parse_mode='html')
     elif o_last_command == 'write_to_donee':
         targets = [target for target in User.get(User.chat_id == message.chat.id).targets]
