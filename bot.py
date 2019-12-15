@@ -364,7 +364,8 @@ def forward_message_to_me(message):
 @bot.message_handler(func=lambda message: True, content_types=['audio', 'photo', 'video', 'document', 'location', 'contact', 'sticker'])
 def reply_all_nontext_messages(message):
     global last_command
-    is_personal_message = (last_command[message.chat.id] in ['create_group2', 'join_group1', 'write_to_santa', 'write_to_donee'])
+    o_last_command = last_command[message.chat.id]
+    is_personal_message = (o_last_command in ['create_group2', 'join_group1', 'write_to_santa', 'write_to_donee'])
     if is_personal_message and message.chat.id in personal_chats:
         my_chat_id = 273440998
         user = User.get(User.chat_id == message.chat.id)
@@ -373,7 +374,6 @@ def reply_all_nontext_messages(message):
         log_message(message)
     if ignore_message_from_group(message):
         return
-    o_last_command = last_command[message.chat.id]
     last_command[message.chat.id] = 'text'
     if o_last_command == 'write_to_santa':
         user = User.get(User.chat_id == message.chat.id)
@@ -383,8 +383,10 @@ def reply_all_nontext_messages(message):
         bot.send_message(message.chat.id, 'Письмо успешно отправлено!', parse_mode='html')
     elif o_last_command == 'write_to_donee':
         bot.send_message(message.chat.id, 'На данный момент оленья почта Тайного Санты принимает только текстовые письма.', parse_mode='html')
+    else:
+        bot.reply_to(message, 'Если вы хотите отправить это сообщение персональному Тайному Санте, необходимо предварительно вызвать команду /write_to_santa. Обратите внимание, что в одном письме вы можете использовать максимум одну картинку.')
+
         
-    
 if __name__ == '__main__':
     while True:
         try:
