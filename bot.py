@@ -363,7 +363,6 @@ def forward_message_to_me(message):
 
 @bot.message_handler(func=lambda message: True, content_types=['audio', 'video', 'document', 'location', 'contact', 'sticker'])
 def reply_all_nontext_messages(message):
-    bot.reply_to(message, "This is the default command handler.")
     global last_command
     is_personal_message = (last_command[message.chat.id] in ['create_group2', 'join_group1', 'write_to_santa', 'write_to_donee'])
     if is_personal_message and message.chat.id in personal_chats:
