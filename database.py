@@ -26,4 +26,5 @@ class User(Model):
 User.create_table()
 Group.create_table()
 for user in User.select():
-    print(user.chat_id, user.name, user.santa)
+    targets = [target for target in user.targets]
+    print(user.chat_id, user.name, 'santa =', user.santa, 'targets =', *targets)
