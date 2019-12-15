@@ -381,6 +381,8 @@ def reply_all_nontext_messages(message):
         bot.forward_message(user.santa.chat_id, message.chat.id, message.message_id)
         bot.send_message(user.santa.chat_id, 'Если вы хотите ответить, используйте команду /write_to_donee.', parse_mode='html')
         bot.send_message(message.chat.id, 'Письмо успешно отправлено!', parse_mode='html')
+    elif o_last_command == 'write_to_donee':
+        bot.send_message(message.chat.id, 'На данный момент оленья почта Тайного Санты принимает только текстовые письма.', parse_mode='html')
         
     
 if __name__ == '__main__':
