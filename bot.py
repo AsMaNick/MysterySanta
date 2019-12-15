@@ -361,7 +361,7 @@ def forward_message_to_me(message):
     bot.forward_message(my_chat_id, message.chat.id, message.message_id)
 
 
-@bot.message_handler(func=lambda message: True, content_types=['audio', 'video', 'document', 'location', 'contact', 'sticker'])
+@bot.message_handler(func=lambda message: True, content_types=['audio', 'photo', 'video', 'document', 'location', 'contact', 'sticker'])
 def reply_all_nontext_messages(message):
     global last_command
     is_personal_message = (last_command[message.chat.id] in ['create_group2', 'join_group1', 'write_to_santa', 'write_to_donee'])
