@@ -65,7 +65,7 @@ def is_first_message(chat_id):
 @bot.message_handler(commands=['notify_user'])
 def notify_user(message):
     try:
-        command, chat_id, *texts = message.text.split()
+        command, chat_id, *texts = message.text.split(' ')
         text = ' '.join(texts)
         try:
             bot.send_message(chat_id, text, parse_mode='html')
